@@ -28,7 +28,6 @@ async function registerUser(req,res){
         user
     })
 }
-
 async function loginUser(req,res){
     const{identifier,password}=req.body;
         const isuserexists=await userModel.findOne({
@@ -60,11 +59,27 @@ async function loginUser(req,res){
     })
     
 }
-
 async function logoutUser(req,res){
     res.clearCookie("token");
     res.status(200).json({
         message:"User Logged Out Successfully"
     })
 }
-module.exports={registerUser,loginUser,logoutUser};
+async function showMe(req,res){
+    const id=req.user.id;
+    const user=await userModel.findById(id);
+    if(!user){
+        return res.status(404).json({
+            message:"User Does not Exists"
+        })
+    }
+    res.status(200).json({
+        message:`${user.username} is loginned`,
+        user:{
+            id:user.id,
+            username:user.username,
+            email:user.email
+        }
+    })
+}
+module.exports={registerUser,loginUser,logoutUser,showMe};

@@ -5,7 +5,7 @@ async function authAdmin(req,res,next){
         const token=req.cookies.token;
         if(!token){
             return res.status(401).json({
-                message:"Unauthorized Access"
+                message:"Forbidden"
             })
         }
 
@@ -25,7 +25,6 @@ async function authAdmin(req,res,next){
         })
     }
 }
-
 async function authUser(req,res,next){
     try{
         const token=req.cookies.token;
@@ -37,8 +36,8 @@ async function authUser(req,res,next){
 
         const decode=jwt.verify(token,process.env.jwt_secret);
         if(decode.role!="user"){
-            return res.status(401).json({
-                message:"Unauthorized Access"
+            return res.status(403).json({
+                message:"Forbidden"
             })
         }
 
@@ -51,5 +50,25 @@ async function authUser(req,res,next){
         })
     }
 }
+async function authenticate(req,res,next){
+    try{
+        const token=req.cookies.token;
+        if(!token){
+            return res.status(401).json({
+                message:"Unauthorized Access"
+            })
+        }
 
-module.exports={authAdmin,authUser}
+        const decode=jwt.verify(token,process.env.jwt_secret);
+
+        req.user=decode;
+        next();
+    }catch(err){
+        console.log(err);
+        res.status(401).json({
+            message:"Unauthorized Access"
+        })
+    }
+}
+
+module.exports={authAdmin,authUser,authenticate}
