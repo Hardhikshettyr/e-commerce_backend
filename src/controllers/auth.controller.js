@@ -3,33 +3,44 @@ const bcrypt=require("bcryptjs")
 const jwt=require("jsonwebtoken")
 
 async function registerUser(req,res){
-    const {username,email,password,role="user"}=req.body;
-    const isuserexists=await userModel.findOne({
-        $or:[
-            {username},{email}
-        ]
-    });
-    if(isuserexists){
-        return res.status(409).json({
-            message:"Username or Email Already Exists",
+    try{
+
+        const {username,email,password,role="user"}=req.body;
+        const isuserexists=await userModel.findOne({
+            $or:[
+                {username},{email}
+            ]
+        });
+        if(isuserexists){
+            return res.status(409).json({
+                message:"Username or Email Already Exists",
+            })
+        }
+        const hash=await bcrypt.hash(password,10);
+        const user=await userModel.create({
+            username,
+            email,
+            password:hash,
+            role
         })
+        const token=jwt.sign({id:user._id, role:user.role},process.env.jwt_secret);
+        res.cookie("token",token);
+        res.status(201).json({
+            message:"User registered Successfully",
+            user
+        })
+    }catch (error) {
+        console.log(error);
+
+        return res.status(500).json({
+            message: "Internal Server Error"
+        });
     }
-    const hash=await bcrypt.hash(password,10);
-    const user=await userModel.create({
-        username,
-        email,
-        password:hash,
-        role
-    })
-    const token=jwt.sign({id:user._id, role:user.role},process.env.jwt_secret);
-    res.cookie("token",token);
-    res.status(201).json({
-        message:"User registered Successfully",
-        user
-    })
+    
 }
 async function loginUser(req,res){
-    const{identifier,password}=req.body;
+    try{
+        const{identifier,password}=req.body;
         const isuserexists=await userModel.findOne({
         $or:[
             {username:identifier},{email:identifier}
@@ -57,16 +68,34 @@ async function loginUser(req,res){
             role:isuserexists.role
         }
     })
+    }catch (error) {
+        console.log(error);
+
+        return res.status(500).json({
+            message: "Internal Server Error"
+        });
+    }
+    
     
 }
 async function logoutUser(req,res){
-    res.clearCookie("token");
-    res.status(200).json({
+    try{
+        res.clearCookie("token");
+        res.status(200).json({
         message:"User Logged Out Successfully"
     })
+    }catch (error) {
+        console.log(error);
+
+        return res.status(500).json({
+            message: "Internal Server Error"
+        });
+    }
+    
 }
 async function showMe(req,res){
-    const id=req.user.id;
+    try{
+        const id=req.user.id;
     const user=await userModel.findById(id);
     if(!user){
         return res.status(404).json({
@@ -81,5 +110,13 @@ async function showMe(req,res){
             email:user.email
         }
     })
+    }catch (error) {
+        console.log(error);
+
+        return res.status(500).json({
+            message: "Internal Server Error"
+        });
+    }
+    
 }
 module.exports={registerUser,loginUser,logoutUser,showMe};
