@@ -56,7 +56,7 @@ async function authenticate(req,res,next){
         if(!token){
             return res.status(401).json({
                 message:"Unauthorized Access"
-            })
+            });
         }
 
         const decode=jwt.verify(token,process.env.jwt_secret);
